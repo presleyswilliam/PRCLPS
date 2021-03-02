@@ -1,0 +1,7 @@
+Programs written in C++
+
+Included is the .cpp source files and Unix executables from macOS 'make' command.
+If './<file_name>' doesn't work, just use standard gcc/g++ to compile programs to run.
+
+
+Programs are written to terminate on 90% convergence (as long as a perfect fitness individual exists) since mutation often prevents full 100% convergence. Program termination on 90% convergence outputs "mostly" converged. 
