@@ -1,5 +1,9 @@
 import matplotlib.pyplot as plt
+import numpy as np
 import sys
+
+#import warnings
+# warnings.simplefilter("ignore", UserWarning)  # Warning is for if xticks aren't set before xticklabels are set
 
 class Graphing:
     def __init__(self, filePath):
@@ -20,27 +24,61 @@ class Graphing:
         for key in vars(self).keys():
             del vars(self)[key][0]
             del vars(self)[key][-1]
+
+        # Convert from string to int after getting rid of non-data lines
+        for i in range(0, len(self.generation)):
+            self.generation[i] = float(self.generation[i])
+            self.averageFitness[i] = float(self.averageFitness[i])
+            self.bestFitness[i] = float(self.bestFitness[i])
+            self.diversity[i] = float(self.diversity[i])
+
+    def printGeneration(self):
+        print("Generation: ")
+        print(self.generation)
+        return self
+    def printAverageFitness(self):
+        print("Average Fitness: ")
+        print(self.averageFitness)
+        return self
+    def printBestFitness(self):
+        print("Best Fitness: ")
+        print(self.bestFitness)
+        return self
+    def printDiversity(self):
+        print("Diversity: ")
+        print(self.diversity)
+        return self
         
+    def plotStats(self):
+        fig, ax = plt.subplots(nrows=2, ncols=1)
+        ax[0].plot(self.generation, self.averageFitness, label="Average Fitness")
+        ax[0].plot(self.generation, self.bestFitness, label="Best Fitness")
+        # ax[0].set_yticks(np.linspace(0, 1, 11))
+        ax[0].set_ylabel("Fitness")
+        # ax[0].set_title("Performance Graphs")
+
+        ax[1].plot(self.generation, self.diversity, label="Diversity")
+        # ax[1].set_yticks(np.linspace(self.diversity[0], self.diversity[len(self.diversity)-1], 11))#int(len(self.diversity)/3)))
+        ax[1].set_xlabel("Generations")
+        ax[1].set_ylabel("Diversity Metric")
+        # ax[1].set_title("Performance Graphs")
+
+        for i, axVal in enumerate(ax):
+            plt.draw()
+            ax[i].set_xticks(self.generation) # This prevents UserWarning from .set_xticklabels()
+            ax[i].set_xticklabels(ax[i].get_xticks(), rotation=80)
+            ax[i].legend(loc="upper left")
+
+        plt.suptitle("Performance Graphs")
+        plt.tight_layout()
+        plt.show()
+
+
 
 def main():
     himmelblau = Graphing("output.txt")
-    # print(himmelblau.generation)
-    # print(himmelblau.averageFitness)
-    # print(himmelblau.bestFitness)
-    # print(himmelblau.diversity)
-
-    fig, ax = plt.subplots(nrows=2, ncols=1)
-    ax[0].plot(himmelblau.generation, himmelblau.averageFitness)
-    ax[0].plot(himmelblau.generation, himmelblau.bestFitness)
-    ax[1].plot(himmelblau.generation, himmelblau.diversity)
-    plt.xlabel("Generations")
-    ax[0].set_xticks(range(0, len(himmelblau.generation), 5))
-    ax[1].set_xticks(range(0, len(himmelblau.generation), 5))
-    ax[0].set_yticks(range(0, len(himmelblau.generation), 5))
-    ax[1].set_yticks(range(0, len(himmelblau.generation), 5))
-    plt.ylabel("Best fitness")
-    plt.title("Performance Graphs")
-    plt.show()
+    # himmelblau.printGeneration().printAverageFitness().printBestFitness().printDiversity()
+    himmelblau.plotStats()
 
 if __name__ == "__main__":
     main()
