@@ -18,12 +18,13 @@ class Graphing:
                 self.generation.append(line[0])
                 self.averageFitness.append(line[2])
                 self.bestFitness.append(line[1])
-                self.diversity.append(line[3].split('%')[0])
+                self.diversity.append(line[3])
 
-        # Delete first and last line of file i.e. initial message and termination string
-        for key in vars(self).keys():
-            del vars(self)[key][0]
-            del vars(self)[key][-1]
+        # Not needed anymore
+        # # Delete first and last line of file i.e. initial message and termination string
+        # for key in vars(self).keys():
+        #     del vars(self)[key][0]
+        #     del vars(self)[key][-1]
 
         # Convert from string to int after getting rid of non-data lines
         for i in range(0, len(self.generation)):

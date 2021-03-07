@@ -1,6 +1,13 @@
 package himmelblau;
 
-
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.Writer;
 import java.lang.Math;
 
 import java.text.DecimalFormat;
@@ -16,7 +23,7 @@ import java.util.Random;
 public class Population {
     DecimalFormat gen;
     DecimalFormat ftns;
-    DecimalFormat prcnt;
+    DecimalFormat dvsty;
     DecimalFormat popVal;
     Random rand;
 
@@ -36,10 +43,12 @@ public class Population {
     double highestFitnessScore;
     double averageFitnessScore;
     double lowestFitnessScore;
-    double percentOfIdenticalGenomes;
+    double diversity;
 
     boolean terminationCondition;
     String terminationString;
+
+    List<String> pythonTextString;
     
     double[][] population;
     List<Integer> matingPool; // List of indexes 
@@ -49,7 +58,7 @@ public class Population {
     public Population() {
         gen = new DecimalFormat("000000");
         ftns = new DecimalFormat("0.0000");
-        prcnt = new DecimalFormat("00.##");
+        dvsty = new DecimalFormat("00.00");
         popVal = new DecimalFormat("0.00");
         rand = new Random();
         safetyLimit = 200000;
@@ -67,11 +76,12 @@ public class Population {
         generationNumber = 0;
         highestFitnessScore = 0.0;
         averageFitnessScore = 0.0;
-        percentOfIdenticalGenomes = 0.0;
+        diversity = 0.0;
 
         terminationCondition = (averageFitnessScore < 0.9999);  // Rounding...
-        //averageFitnessScore < 1.0 && generationNumber < safetyLimit && (highestFitnessScore < 1.0 || averageFitnessScore < .95);
-        terminationString = "Default termination string.";
+        terminationString = "Default termination string. "; // Extra space on the end is for python file line 21...
+
+        pythonTextString = new ArrayList<String>();
 
         population = new double[popSize][bitstringGenomeLen];
         matingPool = new ArrayList<Integer>(popSize);
@@ -82,7 +92,9 @@ public class Population {
         System.out.println(problemName + " " + popSize + " " + lambdaSize + " " + standardDeviation + " " + crossoverRate);
       }
     void printGenerationalStatistics() {
-        System.out.println(gen.format(generationNumber) + " " + ftns.format(highestFitnessScore) + " " + ftns.format(averageFitnessScore) + " " + prcnt.format(percentOfIdenticalGenomes) + "%");
+        String outputString = gen.format(generationNumber) + " " + ftns.format(highestFitnessScore) + " " + ftns.format(averageFitnessScore) + " " + dvsty.format(diversity);
+        System.out.println(outputString);
+        pythonTextString.add(outputString);
     }
 
     double[][] clone2DArray(double[][] array) {
@@ -235,42 +247,40 @@ public class Population {
 
         return;
     }
+    void setDiversity() {
+        double maxEuclideanDistance = 0.0;
 
-    double getPercentOfIdenticalGenomes() {
-        double percentOfIdenticalGenomes = 0.0;
-        List<Integer> matchedIndexes = new ArrayList<Integer>();
+        for (int individual = 0; individual < popSize; individual++) {
+            double xAllele = 0;
+            double yAllele = 0;
+    
+            for (int i = 0; i < (bitstringGenomeLen/2); i++) {   //xAllele is first half of genome
+                xAllele += population[individual][i];
+            }
+            for (int i = (bitstringGenomeLen/2); i < (bitstringGenomeLen); i++) { //yAllele is second half of genome
+                yAllele += population[individual][i];
+            }
+
+            for (int copmaredIndividual = 0; copmaredIndividual < popSize; copmaredIndividual++) {
+                double comparedXAllele = 0;
+                double comparedYAllele = 0;
         
-        for (int i = 0; i < popSize; i++) {
-            boolean isExistingMatch = false;
-            for (int n = 0; n < matchedIndexes.size(); n++) {
-                if (i == matchedIndexes.get(n)) {   // If already matched then continue outer loop
-                    isExistingMatch = true;
-                    break;
+                for (int j = 0; j < (bitstringGenomeLen/2); j++) {   //xAllele is first half of genome
+                    comparedXAllele += population[copmaredIndividual][j];
+                }
+                for (int j = (bitstringGenomeLen/2); j < (bitstringGenomeLen); j++) { //yAllele is second half of genome
+                    comparedYAllele += population[copmaredIndividual][j];
+                }
+
+                double euclideanDistance = Math.sqrt( Math.pow(xAllele - comparedXAllele, 2) + Math.pow(yAllele - comparedYAllele, 2) * 1.0);
+                if (euclideanDistance > maxEuclideanDistance) {
+                    maxEuclideanDistance = euclideanDistance;
                 }
             }
-            if (isExistingMatch) {
-                continue;
-            }
-
-
-            boolean isiAlreadyMatched = false;
-            for (int j = i + 1; j < popSize; j++) {
-                if(Arrays.equals(population[i], population[j])) {
-                    if (isiAlreadyMatched) {
-                        matchedIndexes.add(j);
-                    } else {
-                        matchedIndexes.add(i);
-                        matchedIndexes.add(j);
-                        isiAlreadyMatched = true;
-                    }
-                }
-            }
-
         }
+        diversity = maxEuclideanDistance;
 
-        percentOfIdenticalGenomes = ((double) (matchedIndexes.size()) / (double) popSize) * 100.0;
-
-        return percentOfIdenticalGenomes;
+        return;
     }
 
     void discreteRecombination() {
@@ -422,7 +432,7 @@ public class Population {
             muPlusLambda();
             
             fitnessStatistics();
-            percentOfIdenticalGenomes = getPercentOfIdenticalGenomes();
+            setDiversity();
 
             generationNumber++;
             printGenerationalStatistics();
@@ -436,12 +446,14 @@ public class Population {
         initializePopulation();
         fitnessStatistics();
         printOneTimeHeader();
-        getPercentOfIdenticalGenomes();
+        setDiversity();
         printGenerationalStatistics();
 
         algorithmLogic();
 
         checkTerminationString();
+
+        printToOutputFile();
         // printPopulation();
     }
 
@@ -455,7 +467,26 @@ public class Population {
         } else {
             //default string
         }
-        System.out.print(terminationString);
+        System.out.println(terminationString);
         // printPopulation();
+    }
+
+    void printToOutputFile() {
+        try {
+            Writer fileWriter = new FileWriter("himmelblau/output.txt", false); //overwrites file
+
+            for (int i = 0; i < pythonTextString.size(); i++) {
+                fileWriter.write(pythonTextString.get(i));
+                if (i != pythonTextString.size() - 1) {
+                    fileWriter.write(System.lineSeparator());
+                }
+            }
+
+            fileWriter.close();
+
+        } catch (IOException ex){
+            System.out.println (ex.toString());
+        }
+
     }
 }
