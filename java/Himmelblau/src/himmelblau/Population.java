@@ -38,6 +38,7 @@ public class Population {
     double lowestFitnessScore;
     double percentOfIdenticalGenomes;
 
+    boolean terminationCondition;
     String terminationString;
     
     double[][] population;
@@ -60,7 +61,7 @@ public class Population {
         bitstringGenomeLen = 20;
         //mutationRate = 0.01;
         standardDeviation = 0.5;
-        crossoverRate = 0.0;
+        crossoverRate = 0.5;
         
         /* Iteration information */
         generationNumber = 0;
@@ -68,6 +69,8 @@ public class Population {
         averageFitnessScore = 0.0;
         percentOfIdenticalGenomes = 0.0;
 
+        terminationCondition = (averageFitnessScore < 0.9999);  // Rounding...
+        //averageFitnessScore < 1.0 && generationNumber < safetyLimit && (highestFitnessScore < 1.0 || averageFitnessScore < .95);
         terminationString = "Default termination string.";
 
         population = new double[popSize][bitstringGenomeLen];
@@ -411,7 +414,7 @@ public class Population {
             5. Survivor Selection
             6. Termination check -> Terminate or go back to step 2
         */
-        while (averageFitnessScore < 1.0 && generationNumber < safetyLimit && (highestFitnessScore < 1.0 || averageFitnessScore < .95)) { // Convergence Termination 
+        while (terminationCondition) { // Convergence Termination 
             uniformRandomSelection();
             discreteRecombination();
             gaussianPerturbation();
@@ -423,16 +426,9 @@ public class Population {
 
             generationNumber++;
             printGenerationalStatistics();
-            if (generationNumber > 2000) {
-                printPopulation();
-                System.exit(0);
-            }
-            // if (highestFitnessScore > 0.5) {
-            //     standardDeviation *= (1.0 - highestFitnessScore);
-            // } else {
-            //     standardDeviation *= 1 + highestFitnessScore;
-            // }
+            
             standardDeviation = 1.0 - averageFitnessScore;
+            terminationCondition = (averageFitnessScore < 0.9999);
         }
     }
 
@@ -454,12 +450,12 @@ public class Population {
             terminationString = "Population has converged";
         } else if (generationNumber >= safetyLimit) {
             terminationString = "Safety limit of " + safetyLimit + " generations";
-        } else if (highestFitnessScore >= 1.0 && averageFitnessScore >= .95) {// && percentOfIdenticalGenomes >= 50) {
+        } else if (terminationCondition) {
             terminationString = "Population has MOSTLY converged";
         } else {
             //default string
         }
         System.out.print(terminationString);
-        printPopulation();
+        // printPopulation();
     }
 }
