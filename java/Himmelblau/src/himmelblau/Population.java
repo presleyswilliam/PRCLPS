@@ -17,6 +17,7 @@ public class Population {
     DecimalFormat gen;
     DecimalFormat ftns;
     DecimalFormat prcnt;
+    DecimalFormat popVal;
     Random rand;
 
     int safetyLimit;
@@ -26,7 +27,8 @@ public class Population {
     int popSize;
     int lambdaSize;
     int bitstringGenomeLen;
-    double mutationRate;
+    //double mutationRate;
+    double standardDeviation;
     double crossoverRate;
 
     /* Iteration information */
@@ -38,25 +40,27 @@ public class Population {
 
     String terminationString;
     
-    int[][] population;
-    List<Integer> matingPool;
-    int[][] childrenPool;
+    double[][] population;
+    List<Integer> matingPool; // List of indexes 
+    double[][] childrenPool;
 
 
     public Population() {
         gen = new DecimalFormat("000000");
         ftns = new DecimalFormat("0.0000");
         prcnt = new DecimalFormat("00.##");
+        popVal = new DecimalFormat("0.00");
         rand = new Random();
         safetyLimit = 200000;
 
         /* One-time header information */
         problemName = "himmelblau";
-        popSize = 100;
+        popSize = 15;
         lambdaSize = 100;
-        bitstringGenomeLen = 32;
-        mutationRate = 0.01;
-        crossoverRate = 0.5;
+        bitstringGenomeLen = 20;
+        //mutationRate = 0.01;
+        standardDeviation = 0.5;
+        crossoverRate = 0.0;
         
         /* Iteration information */
         generationNumber = 0;
@@ -66,20 +70,20 @@ public class Population {
 
         terminationString = "Default termination string.";
 
-        population = new int[popSize][bitstringGenomeLen];
+        population = new double[popSize][bitstringGenomeLen];
         matingPool = new ArrayList<Integer>(popSize);
-        childrenPool = new int[lambdaSize][bitstringGenomeLen];
+        childrenPool = new double[lambdaSize][bitstringGenomeLen];
     }
 
     void printOneTimeHeader() {  // One time header information
-        System.out.println(problemName + " " + popSize + " " + bitstringGenomeLen + " " + mutationRate + " " + crossoverRate);
+        System.out.println(problemName + " " + popSize + " " + lambdaSize + " " + standardDeviation + " " + crossoverRate);
       }
     void printGenerationalStatistics() {
         System.out.println(gen.format(generationNumber) + " " + ftns.format(highestFitnessScore) + " " + ftns.format(averageFitnessScore) + " " + prcnt.format(percentOfIdenticalGenomes) + "%");
     }
 
-    int[][] clone2DArray(int[][] array) {
-        int[][] returnArray = new int[array.length][array[0].length];
+    double[][] clone2DArray(double[][] array) {
+        double[][] returnArray = new double[array.length][array[0].length];
         for (int i = 0; i < array.length; i++) {
             returnArray[i] = array[i].clone();
         }
@@ -90,36 +94,53 @@ public class Population {
     void initializePopulation() {
         for (int i = 0; i < popSize; i++) {
             for (int n = 0; n < bitstringGenomeLen; n++) {
-                // population[i][n] = rand.nextInt(2);
-                population[i][n] = (int) Math.round( Math.random() );
+                population[i][n] = rand.nextGaussian();
+
+                if (population[i][n] > 1.0) {
+                    population[i][n] = 1.0;
+                } else if (population[i][n] < -1.0) {
+                    population[i][n] = -1.0;
+                }
             }
         }
     }
 
-    void print2DArray(int[][] array) {
-        System.out.println("2D array:");
+    void print2DArray(double[][] array) {
+        // System.out.println("2D array:");
         for (int i = 0; i < array.length; i++) {
             for (int n = 0; n < array[0].length; n++) {
-                System.out.print(array[i][n]);
+                System.out.print(popVal.format(array[i][n]));
+                if (n != bitstringGenomeLen - 1) {  // straight copied, maybe change from pop implementation
+                    System.out.print(",");
+                } else {
+                    System.out.println();
+                }
             }
-            System.out.println();
         }
     }
-    void printArray(int[] array) {
-        System.out.println("array:");
+    void printArray(double[] array) {
+        // System.out.println("array:");
         for (int i = 0; i < array.length; i++) {
-            System.out.print(array[i]);
+            System.out.print(popVal.format(array[i]));
+            if (i != bitstringGenomeLen - 1) {
+                System.out.print(",");
+            } else {
+                System.out.println();
+            }
         }
-        System.out.println();
     }
 
     void printPopulation() {
         System.out.println("Population:");
         for (int i = 0; i < popSize; i++) {
             for (int n = 0; n < bitstringGenomeLen; n++) {
-                System.out.print(population[i][n]);
+                System.out.print(popVal.format(population[i][n]));
+                if (n != bitstringGenomeLen - 1) {
+                    System.out.print(",");
+                } else {
+                    System.out.println();
+                }
             }
-            System.out.println();
         }
     }
     void printIndividual(int individual) {
@@ -129,14 +150,66 @@ public class Population {
     }
 
     double fitnessFunc(int individual) {
-        double fitnessScore = 0;
-        for (int i = 0; i < bitstringGenomeLen; i++) {
-            if (population[individual][i] == 1) {
-                fitnessScore++;
-            }
+        double fitnessScore = 0.0;
+        double xAllele = 0;
+        double yAllele = 0;
+
+        for (int i = 0; i < (bitstringGenomeLen/2); i++) {   //xAllele is first half of genome
+            xAllele += population[individual][i];
+        }
+        for (int i = (bitstringGenomeLen/2); i < (bitstringGenomeLen); i++) { //yAllele is second half of genome
+            yAllele += population[individual][i];
         }
 
-        fitnessScore = fitnessScore / (bitstringGenomeLen);
+        double xSquared = Math.pow(xAllele, 2);
+        double ySquared = Math.pow(yAllele, 2);
+        double objFunc = Math.pow( (xSquared + yAllele - 11) , 2) + Math.pow( (xAllele + ySquared - 7) , 2);
+        if (objFunc == 0) {
+            fitnessScore = 2.0 - 0.0;
+        } else if (objFunc >= 1) {
+            fitnessScore = 1.0/objFunc;
+        } else { 
+            fitnessScore = (1.0-objFunc) + 1;
+        }
+
+        fitnessScore = fitnessScore/2.0;
+
+        // if (individual == 0 && generationNumber == 2000) {
+        //     printArray(population[0]);
+        //     System.out.println("Index: " + individual);
+        //     System.out.println("X: " + xAllele);
+        //     System.out.println("Y: " + yAllele);
+        //     System.out.println("ObjFunc: " + objFunc);
+        //     System.out.println("Fitness: " + fitnessScore);
+        // }
+
+        return fitnessScore;
+    }
+
+    double childrenFitnessFunc(int individual) {
+        double fitnessScore = 0.0;
+        double xAllele = 0;
+        double yAllele = 0;
+
+        for (int i = 0; i < (bitstringGenomeLen/2); i++) {   //xAllele is first half of genome
+            xAllele += childrenPool[individual][i];
+        }
+        for (int i = (bitstringGenomeLen/2); i < (bitstringGenomeLen); i++) { //yAllele is second half of genome
+            yAllele += childrenPool[individual][i];
+        }
+
+        double xSquared = Math.pow(xAllele, 2);
+        double ySquared = Math.pow(yAllele, 2);
+        double objFunc = Math.pow( (xSquared + yAllele - 11) , 2) + Math.pow( (xAllele + ySquared - 7) , 2);
+        if (objFunc == 0) {
+            fitnessScore = 2.0 - 0.0;
+        } else if (objFunc >= 1) {
+            fitnessScore = 1.0/objFunc;
+        } else { 
+            fitnessScore = (1.0-objFunc) + 1;
+        }
+
+        fitnessScore = fitnessScore/2.0;
 
         return fitnessScore;
     }
@@ -197,39 +270,16 @@ public class Population {
         return percentOfIdenticalGenomes;
     }
 
-    void uniformMutation() {
-        for (int i = 0; i < popSize; i++) {
-            population[i] = defaultMutation(population[i]);
-        }
-    }
-
-    int[] defaultMutation(int[] toMutate) {
-        for (int i = 0; i < bitstringGenomeLen; i++) {
-            double r = Math.random();   //Mutation Chance
-            if (r < mutationRate) {
-                if (toMutate[i] == 1) {
-                    toMutate[i] = 0;
-                } else if (toMutate[i] == 0) {
-                    toMutate[i] = 1;
-                } else {
-                    throw new java.lang.RuntimeException("Population bit should never not be 1 or 0.");
-                }
-            }
-        }
-
-        return toMutate;
-    }
-
-    void onePointCrossover() {
+    void discreteRecombination() {
         for (int i = 0; i < matingPool.size()/2; i++) {
             int parentOneIndex = matingPool.get(i*2);
             int parentTwoIndex = matingPool.get((i*2)+1);
 
-            int[] parentOne = population[parentOneIndex].clone();
-            int[] parentTwo = population[parentTwoIndex].clone();
+            double[] parentOne = population[parentOneIndex].clone();
+            double[] parentTwo = population[parentTwoIndex].clone();
             
             int numOfChildren = 2;
-            int[][] children = new int[numOfChildren][bitstringGenomeLen];
+            double[][] children = new double[numOfChildren][bitstringGenomeLen];
 
             if (Math.random() < crossoverRate) {
                 children = crossoverFunc(parentOne, parentTwo);
@@ -238,17 +288,16 @@ public class Population {
                 children[1] = parentTwo.clone();
             }
 
-            population[(i*2)+0] = children[0].clone();
-            population[(i*2)+1] = children[1].clone();
+            childrenPool[(i*2)+0] = children[0].clone();
+            childrenPool[(i*2)+1] = children[1].clone();
         }
     }
 
-    int[][] crossoverFunc(int[] parentOne, int[] parentTwo) {
-        int[][] children = new int[2][bitstringGenomeLen];
-        int crossoverPoint = rand.nextInt(bitstringGenomeLen-2) + 1; // range from 1-30 otherwise its just two cases of asexual reproduction of parents
+    double[][] crossoverFunc(double[] parentOne, double[] parentTwo) {
+        double[][] children = new double[2][bitstringGenomeLen];
 
         for (int i = 0; i < bitstringGenomeLen; i++) {
-            if (i < crossoverPoint) {
+            if (Math.random() < 0.5) {
                 children[0][i] = parentOne[i];
                 children[1][i] = parentTwo[i];
             } else {
@@ -259,53 +308,97 @@ public class Population {
 
         return children;
     }
+
+    void gaussianPerturbation() {
+        for (int i = 0; i < childrenPool.length; i++) {
+            // if (generationNumber == 50) { printArray(childrenPool[i]); }
+            childrenPool[i] = defaultMutation(childrenPool[i]);
+            // if (generationNumber == 50) { printArray(childrenPool[i]); }
+        }
+        // if (generationNumber == 50) { print2DArray(childrenPool); }
+    }
+
+    double[] defaultMutation(double[] toMutate) {
+        for (int i = 0; i < bitstringGenomeLen; i++) {
+            double mutation = rand.nextGaussian() * standardDeviation;
+            // System.out.println(mutation);
+            toMutate[i] += mutation;
+
+            if (toMutate[i] > 1.0) {
+                toMutate[i] = 1.0;
+            } else if (toMutate[i] < -1.0) {
+                toMutate[i] = -1.0;
+            }
+        }
+
+        return toMutate;
+    }
+
+    void childSelection() { // Placeholder for previous homework
+        population = clone2DArray(childrenPool);
+    }
         
-    void rouletteWheelSelection() {
-    /* Roulette Wheel Selection
-        1. Compute fitnessVector
-        2. Find min fitness
-        3. Zero offset fitnesses - subtract the min from each element and then add 1/(10^100)
-        4. Find sum of fitness
-        5. Use sum to create roulette wheel array - (zero offsetted fitness / max fitness)
-        6. Pick the first number larger than random number to be parent until mating pool is filled
-    */
+    void uniformRandomSelection() {
         matingPool.clear();
-        double offsetConst = 1 / (Math.pow(10, 100));
-
-        List<Double> fitnessVector = new ArrayList<Double>();
-        List<Double> rouletteBoard = new ArrayList<Double>();
-        double fitnessTotal = 0;
-
-        fitnessStatistics();
-
-        for (int i = 0; i < popSize; i++) {
-            double fitness = fitnessFunc(i);
-            fitnessTotal += fitness - lowestFitnessScore + offsetConst;
-            fitnessVector.add(fitness - lowestFitnessScore + offsetConst); //gets vector of fitness of each individual
+        for (int i = 0; i < lambdaSize; i++) {
+            matingPool.add(rand.nextInt(popSize));
         }
+    }
+
+    void muCommaLambda() {  // Only children can move onto next generation
+        Map<Integer, Double> fitnessMap = new HashMap<Integer, Double>(lambdaSize);
+        for (int i = 0; i < lambdaSize; i++) {
+            fitnessMap.put(i, childrenFitnessFunc(i));   // Needs to be of children
+        }
+
+        fitnessMap = MapUtil.sortByValue(fitnessMap); // Sort by fitness value (need map to retain original indexes)
+
+        List<Integer> rankedFitness = new ArrayList<Integer>();
+        rankedFitness = MapUtil.mapToList(fitnessMap);  // Get list from map to use to set population
+
+        // for (int i = 0; i < popSize; i++) {
+        //     population[i] = childrenPool[rankedFitness.get(i)].clone();
+        // }
         for (int i = 0; i < popSize; i++) {
-            double slotSize = fitnessVector.get(i)/fitnessTotal;
-            if (i == 0) {
-                rouletteBoard.add(slotSize);
+            population[i] = childrenPool[rankedFitness.get(rankedFitness.size()-1-i)].clone();
+        }
+
+        return;
+    }
+    
+    void muPlusLambda() {  // Only children can move onto next generation
+        Map<Integer, Double> fitnessMap = new HashMap<Integer, Double>(lambdaSize);
+        // for (int i = 0; i < lambdaSize; i++) {
+        //     fitnessMap.put(i, childrenFitnessFunc(i));   // Needs to be of children
+        // }
+        double[][] tempChildrenPool = new double[popSize + lambdaSize][bitstringGenomeLen];
+        for (int i = 0; i < popSize + lambdaSize; i++) {
+            if (i < popSize) {
+                tempChildrenPool[i] = population[i].clone();
             } else {
-                rouletteBoard.add(rouletteBoard.get(rouletteBoard.size()-1) + slotSize);
+                tempChildrenPool[i] = childrenPool[i - popSize].clone();
             }
         }
-        
-        while (matingPool.size() < popSize) {
-            double r = Math.random();
-
-            for (int n = 0; n < popSize; n++) {
-                if (r < rouletteBoard.get(n)) {
-                    matingPool.add(n);
-                    break;
-                } else if (n == popSize-1) {
-                    matingPool.add(n);
-                    break;
-                }
+        for (int i = 0; i < popSize + lambdaSize; i++) {
+            if (i < popSize) {
+                fitnessMap.put(i, fitnessFunc(i));   // Needs to be of children
+            } else {
+                fitnessMap.put(i, childrenFitnessFunc(i - popSize));   // Needs to be of children
             }
-        }  
-        
+        }
+
+        fitnessMap = MapUtil.sortByValue(fitnessMap); // Sort by fitness value (need map to retain original indexes)
+
+        List<Integer> rankedFitness = new ArrayList<Integer>();
+        rankedFitness = MapUtil.mapToList(fitnessMap);  // Get list from map to use to set population
+
+        // for (int i = 0; i < popSize; i++) {
+        //     population[i] = childrenPool[rankedFitness.get(i)].clone();
+        // }
+        for (int i = 0; i < popSize; i++) {
+            population[i] = tempChildrenPool[rankedFitness.get(rankedFitness.size()-1-i)].clone();
+        }
+
         return;
     }
 
@@ -318,17 +411,28 @@ public class Population {
             5. Survivor Selection
             6. Termination check -> Terminate or go back to step 2
         */
-        while (averageFitnessScore < 1.0 && generationNumber < safetyLimit && (highestFitnessScore < 1.0 || averageFitnessScore < .95 || percentOfIdenticalGenomes < 50)) { // Convergence Termination 
-            rouletteWheelSelection();
-            onePointCrossover();
-            uniformMutation();
-            //Survivor Selection
+        while (averageFitnessScore < 1.0 && generationNumber < safetyLimit && (highestFitnessScore < 1.0 || averageFitnessScore < .95)) { // Convergence Termination 
+            uniformRandomSelection();
+            discreteRecombination();
+            gaussianPerturbation();
+            // muCommaLambda();
+            muPlusLambda();
             
             fitnessStatistics();
             percentOfIdenticalGenomes = getPercentOfIdenticalGenomes();
 
             generationNumber++;
             printGenerationalStatistics();
+            if (generationNumber > 2000) {
+                printPopulation();
+                System.exit(0);
+            }
+            // if (highestFitnessScore > 0.5) {
+            //     standardDeviation *= (1.0 - highestFitnessScore);
+            // } else {
+            //     standardDeviation *= 1 + highestFitnessScore;
+            // }
+            standardDeviation = 1.0 - averageFitnessScore;
         }
     }
 
@@ -350,11 +454,12 @@ public class Population {
             terminationString = "Population has converged";
         } else if (generationNumber >= safetyLimit) {
             terminationString = "Safety limit of " + safetyLimit + " generations";
-        } else if (highestFitnessScore >= 1.0 && averageFitnessScore >= .95 && percentOfIdenticalGenomes >= 50) {
+        } else if (highestFitnessScore >= 1.0 && averageFitnessScore >= .95) {// && percentOfIdenticalGenomes >= 50) {
             terminationString = "Population has MOSTLY converged";
         } else {
             //default string
         }
         System.out.print(terminationString);
+        printPopulation();
     }
 }
