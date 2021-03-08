@@ -1,0 +1,11 @@
+Programs written in Java and Python
+
+To run, use "./runHimmelblau.sh" from the "src/" directory. 
+
+I had to use "chmod u+x runHimmelblau.sh" to make it executable on my system. Not sure if that transfers once submitted or it will need to be made executable again. 
+
+"runHimmelblau.sh" should be run from the "src" folder for the file paths to work correctly.
+
+The graphs are written in python using matplotlib, my python version is 3.7 and it runs fine. The "runHimmelblau.sh" file should handle calling the java and python files.
+
+The main java program requires that it can write to a file for the python program to read and plot.
