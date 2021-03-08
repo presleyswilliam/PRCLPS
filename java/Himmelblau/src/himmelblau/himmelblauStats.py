@@ -16,9 +16,9 @@ class Graphing:
             for line in f:  # for i, line in enumerate(f):
                 line = line.split(' ')
                 self.generation.append(line[0])
-                self.averageFitness.append(line[2])
-                self.bestFitness.append(line[1])
-                self.diversity.append(line[3])
+                self.averageFitness.append(line[3])
+                self.bestFitness.append(line[2])
+                self.diversity.append(line[4])
 
         # Not needed anymore
         # # Delete first and last line of file i.e. initial message and termination string
@@ -54,19 +54,22 @@ class Graphing:
         fig, ax = plt.subplots(nrows=2, ncols=1)
         ax[0].plot(self.generation, self.averageFitness, label="Average Fitness")
         ax[0].plot(self.generation, self.bestFitness, label="Best Fitness")
-        # ax[0].set_yticks(np.linspace(0, 1, 11))
+        ax[0].set_yticks(np.linspace(0, 1, 11))
         ax[0].set_ylabel("Fitness")
         # ax[0].set_title("Performance Graphs")
 
         ax[1].plot(self.generation, self.diversity, label="Diversity")
-        # ax[1].set_yticks(np.linspace(self.diversity[0], self.diversity[len(self.diversity)-1], 11))#int(len(self.diversity)/3)))
+        ax[1].set_yticks(np.linspace(self.diversity[0], self.diversity[len(self.diversity)-1], 11))#int(len(self.diversity)/3)))
         ax[1].set_xlabel("Generations")
         ax[1].set_ylabel("Diversity Metric")
         # ax[1].set_title("Performance Graphs")
 
         for i, axVal in enumerate(ax):
             plt.draw()
-            ax[i].set_xticks(self.generation) # This prevents UserWarning from .set_xticklabels()
+            if (len(self.generation) > 50):
+                ax[i].set_xticks(self.generation[::10]) # This prevents UserWarning from .set_xticklabels()
+            else:
+                ax[i].set_xticks(self.generation) # This prevents UserWarning from .set_xticklabels()
             ax[i].set_xticklabels(ax[i].get_xticks(), rotation=80)
             ax[i].legend(loc="upper left")
 
@@ -77,7 +80,7 @@ class Graphing:
 
 
 def main():
-    himmelblau = Graphing("output.txt")
+    himmelblau = Graphing("himmelblau/output.txt")
     # himmelblau.printGeneration().printAverageFitness().printBestFitness().printDiversity()
     himmelblau.plotStats()
 

@@ -40,6 +40,7 @@ public class Population {
 
     /* Iteration information */
     int generationNumber;
+    int candidateEvaluations;
     double highestFitnessScore;
     double averageFitnessScore;
     double lowestFitnessScore;
@@ -51,8 +52,10 @@ public class Population {
     List<String> pythonTextString;
     
     double[][] population;
+    double[][] populationStrategy;
     List<Integer> matingPool; // List of indexes 
     double[][] childrenPool;
+    double[][] childrenPoolStrategy;
 
 
     public Population() {
@@ -65,7 +68,7 @@ public class Population {
 
         /* One-time header information */
         problemName = "himmelblau";
-        popSize = 15;
+        popSize = 100;
         lambdaSize = 100;
         bitstringGenomeLen = 20;
         //mutationRate = 0.01;
@@ -74,25 +77,28 @@ public class Population {
         
         /* Iteration information */
         generationNumber = 0;
+        candidateEvaluations = 0;
         highestFitnessScore = 0.0;
         averageFitnessScore = 0.0;
         diversity = 0.0;
 
-        terminationCondition = (averageFitnessScore < 0.9999);  // Rounding...
+        terminationCondition = (averageFitnessScore < 0.99999);  // Rounding...
         terminationString = "Default termination string. "; // Extra space on the end is for python file line 21...
 
         pythonTextString = new ArrayList<String>();
 
         population = new double[popSize][bitstringGenomeLen];
+        populationStrategy = new double[popSize][bitstringGenomeLen];
         matingPool = new ArrayList<Integer>(popSize);
         childrenPool = new double[lambdaSize][bitstringGenomeLen];
+        childrenPoolStrategy = new double[lambdaSize][bitstringGenomeLen];
     }
 
     void printOneTimeHeader() {  // One time header information
         System.out.println(problemName + " " + popSize + " " + lambdaSize + " " + standardDeviation + " " + crossoverRate);
       }
     void printGenerationalStatistics() {
-        String outputString = gen.format(generationNumber) + " " + ftns.format(highestFitnessScore) + " " + ftns.format(averageFitnessScore) + " " + dvsty.format(diversity);
+        String outputString = gen.format(generationNumber) + " " + gen.format(candidateEvaluations) + " " + ftns.format(highestFitnessScore) + " " + ftns.format(averageFitnessScore) + " " + dvsty.format(diversity);
         System.out.println(outputString);
         pythonTextString.add(outputString);
     }
@@ -116,6 +122,8 @@ public class Population {
                 } else if (population[i][n] < -1.0) {
                     population[i][n] = -1.0;
                 }
+
+                populationStrategy[i][n] = 1.0;
             }
         }
     }
@@ -295,7 +303,16 @@ public class Population {
             double[][] children = new double[numOfChildren][bitstringGenomeLen];
 
             if (Math.random() < crossoverRate) {
-                children = crossoverFunc(parentOne, parentTwo);
+                // children = crossoverFunc(parentOne, parentTwo);
+                for (int n = 0; n < bitstringGenomeLen; n++) {
+                    if (Math.random() < 0.5) {
+                        children[0][n] = parentOne[n];
+                        children[1][n] = parentTwo[n];
+                    } else {
+                        children[0][n] = parentTwo[n];
+                        children[1][n] = parentOne[n];
+                    }
+                }
             } else {
                 children[0] = parentOne.clone();
                 children[1] = parentTwo.clone();
@@ -324,17 +341,13 @@ public class Population {
 
     void gaussianPerturbation() {
         for (int i = 0; i < childrenPool.length; i++) {
-            // if (generationNumber == 50) { printArray(childrenPool[i]); }
             childrenPool[i] = defaultMutation(childrenPool[i]);
-            // if (generationNumber == 50) { printArray(childrenPool[i]); }
         }
-        // if (generationNumber == 50) { print2DArray(childrenPool); }
     }
 
     double[] defaultMutation(double[] toMutate) {
         for (int i = 0; i < bitstringGenomeLen; i++) {
             double mutation = rand.nextGaussian() * standardDeviation;
-            // System.out.println(mutation);
             toMutate[i] += mutation;
 
             if (toMutate[i] > 1.0) {
@@ -398,6 +411,7 @@ public class Population {
             } else {
                 fitnessMap.put(i, childrenFitnessFunc(i - popSize));   // Needs to be of children
             }
+            candidateEvaluations++;
         }
 
         fitnessMap = MapUtil.sortByValue(fitnessMap); // Sort by fitness value (need map to retain original indexes)
@@ -438,7 +452,7 @@ public class Population {
             printGenerationalStatistics();
             
             standardDeviation = 1.0 - averageFitnessScore;
-            terminationCondition = (averageFitnessScore < 0.9999);
+            terminationCondition = (averageFitnessScore < 0.99999);
         }
     }
 
@@ -458,12 +472,10 @@ public class Population {
     }
 
     void checkTerminationString() {
-        if (averageFitnessScore >= 1.0) {
+        if (averageFitnessScore >= 0.99999) {
             terminationString = "Population has converged";
         } else if (generationNumber >= safetyLimit) {
             terminationString = "Safety limit of " + safetyLimit + " generations";
-        } else if (terminationCondition) {
-            terminationString = "Population has MOSTLY converged";
         } else {
             //default string
         }

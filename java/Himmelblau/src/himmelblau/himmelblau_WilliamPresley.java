@@ -11,13 +11,8 @@ public class himmelblau_WilliamPresley {
     public static void main(String args[]) {
         Population pop = new Population();
         pop.run_himmelblau();
-        // CMD.runSingleCommand("ls"); //call python graphing program
-        CMD.runSingleCommand("python3 himmelblau/himmelblauStats.py");
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+
+        // //Doesn't show output/errors in terminal
+        // CMD.runSingleCommand("./himmelblau/runPython.sh");
     }
 }
