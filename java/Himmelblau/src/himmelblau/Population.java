@@ -1,19 +1,14 @@
 package himmelblau;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.io.Writer;
+
 import java.lang.Math;
 
 import java.text.DecimalFormat;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -209,6 +204,11 @@ public class Population {
         return fitnessScore;
     }
 
+    /* childrenFitnessFunc
+        Needed a fitnessFunc to check children and not just population...
+        Should have changed code to take in the array as well as individual
+        but didn't have change to make the function better
+    */
     double childrenFitnessFunc(int individual) {
         double fitnessScore = 0.0;
         double xAllele = 0;
@@ -255,6 +255,11 @@ public class Population {
 
         return;
     }
+
+    /* setDiversity
+        Computes the euclidean distance between each point in the population
+        and sets diversity to the largest distance
+    */
     void setDiversity() {
         double maxEuclideanDistance = 0.0;
 
@@ -291,6 +296,11 @@ public class Population {
         return;
     }
 
+    /* Discrete Recombination
+        Chose discrete recombination so that diversity of
+        genomes is not artificially lowered by producing
+        children that only fall within the range of the parents
+    */
     void discreteRecombination() {
         for (int i = 0; i < matingPool.size()/2; i++) {
             int parentOneIndex = matingPool.get(i*2);
@@ -360,10 +370,6 @@ public class Population {
         return toMutate;
     }
 
-    void childSelection() { // Placeholder for previous homework
-        population = clone2DArray(childrenPool);
-    }
-        
     void uniformRandomSelection() {
         matingPool.clear();
         for (int i = 0; i < lambdaSize; i++) {
@@ -371,6 +377,12 @@ public class Population {
         }
     }
 
+    /* Mu, Lambda
+        Originally tried to use this since the problem is multi-modal
+        however I kept having issues with the elites not staying in
+        the population... possibly a coding error but I ended up
+        choosing mu + lambda instead
+    */
     void muCommaLambda() {  // Only children can move onto next generation
         Map<Integer, Double> fitnessMap = new HashMap<Integer, Double>(lambdaSize);
         for (int i = 0; i < lambdaSize; i++) {
@@ -382,16 +394,17 @@ public class Population {
         List<Integer> rankedFitness = new ArrayList<Integer>();
         rankedFitness = MapUtil.mapToList(fitnessMap);  // Get list from map to use to set population
 
-        // for (int i = 0; i < popSize; i++) {
-        //     population[i] = childrenPool[rankedFitness.get(i)].clone();
-        // }
         for (int i = 0; i < popSize; i++) {
-            population[i] = childrenPool[rankedFitness.get(rankedFitness.size()-1-i)].clone();
+            population[i] = childrenPool[rankedFitness.get(rankedFitness.size()-1-i)].clone();  // Weird indexing bc of rankedFitness ascending order
         }
 
         return;
     }
     
+    /* Mu + Lambda
+        Needed to keep elites in the population so that the population would
+        converge on a solution rather than jumping around too much
+    */
     void muPlusLambda() {  // Only children can move onto next generation
         Map<Integer, Double> fitnessMap = new HashMap<Integer, Double>(lambdaSize);
         // for (int i = 0; i < lambdaSize; i++) {
@@ -407,11 +420,11 @@ public class Population {
         }
         for (int i = 0; i < popSize + lambdaSize; i++) {
             if (i < popSize) {
-                fitnessMap.put(i, fitnessFunc(i));   // Needs to be of children
+                fitnessMap.put(i, fitnessFunc(i));   // Needs to be of population
             } else {
                 fitnessMap.put(i, childrenFitnessFunc(i - popSize));   // Needs to be of children
             }
-            candidateEvaluations++;
+            candidateEvaluations++; // This code goes through each candidate once so its a good place to increment candidateEvaluations
         }
 
         fitnessMap = MapUtil.sortByValue(fitnessMap); // Sort by fitness value (need map to retain original indexes)
@@ -419,11 +432,8 @@ public class Population {
         List<Integer> rankedFitness = new ArrayList<Integer>();
         rankedFitness = MapUtil.mapToList(fitnessMap);  // Get list from map to use to set population
 
-        // for (int i = 0; i < popSize; i++) {
-        //     population[i] = childrenPool[rankedFitness.get(i)].clone();
-        // }
         for (int i = 0; i < popSize; i++) {
-            population[i] = tempChildrenPool[rankedFitness.get(rankedFitness.size()-1-i)].clone();
+            population[i] = tempChildrenPool[rankedFitness.get(rankedFitness.size()-1-i)].clone();  // Weird indexing bc of rankedFitness ascending order
         }
 
         return;
