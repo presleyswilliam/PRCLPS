@@ -9,3 +9,8 @@ I had to use "chmod u+x runHimmelblau.sh" to make it executable on my system. No
 The graphs are written in python using matplotlib, my python version is 3.7 and it runs fine. The "runHimmelblau.sh" file should handle calling the java and python files.
 
 The main java program requires that it can write to a file for the python program to read and plot.
+
+
+
+
+Included in the top level directory (directory of this file) are sample output graphs for a mu of 15 and 100. To change mu size, open "Himmelblau/src/himmelblau/Population.java" and change the value of "popSize" on line 66. Then re-run "runHimmelblau.sh" from "src/" to recompile and run.
