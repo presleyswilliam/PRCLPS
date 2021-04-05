@@ -53,7 +53,7 @@ public class Population {
     double[][] childrenPoolStrategy;
 
 
-    public Population() {
+    public Population(int lSize, int bslen) {
         gen = new DecimalFormat("000000");
         ftns = new DecimalFormat("0.0000");
         dvsty = new DecimalFormat("00.00");
@@ -64,8 +64,8 @@ public class Population {
         /* One-time header information */
         problemName = "himmelblau";
         popSize = 100;
-        lambdaSize = 100;
-        bitstringGenomeLen = 20;
+        lambdaSize = lSize;
+        bitstringGenomeLen = bslen;
         //mutationRate = 0.01;
         standardDeviation = 0.5;
         crossoverRate = 0.5;
@@ -77,7 +77,7 @@ public class Population {
         averageFitnessScore = 0.0;
         diversity = 0.0;
 
-        terminationCondition = (averageFitnessScore < 0.99999);  // Rounding...
+        terminationCondition = (averageFitnessScore < 0.99999) || (generationNumber >= safetyLimit);  // Rounding...
         terminationString = "Default termination string. "; // Extra space on the end is for python file line 21...
 
         pythonTextString = new ArrayList<String>();
@@ -95,7 +95,8 @@ public class Population {
     void printGenerationalStatistics() {
         String outputString = gen.format(generationNumber) + " " + gen.format(candidateEvaluations) + " " + ftns.format(highestFitnessScore) + " " + ftns.format(averageFitnessScore) + " " + dvsty.format(diversity);
         System.out.println(outputString);
-        pythonTextString.add(outputString);
+        // pythonTextString.add(outputString);
+        pythonTextString.add(gen.format(candidateEvaluations));
     }
 
     double[][] clone2DArray(double[][] array) {
@@ -169,19 +170,28 @@ public class Population {
 
     double fitnessFunc(int individual) {
         double fitnessScore = 0.0;
-        double xAllele = 0;
-        double yAllele = 0;
+        // double xAllele = 0;
+        // double yAllele = 0;
 
-        for (int i = 0; i < (bitstringGenomeLen/2); i++) {   //xAllele is first half of genome
-            xAllele += population[individual][i];
-        }
-        for (int i = (bitstringGenomeLen/2); i < (bitstringGenomeLen); i++) { //yAllele is second half of genome
-            yAllele += population[individual][i];
-        }
+        // for (int i = 0; i < (bitstringGenomeLen/2); i++) {   //xAllele is first half of genome
+        //     xAllele += population[individual][i];
+        // }
+        // for (int i = (bitstringGenomeLen/2); i < (bitstringGenomeLen); i++) { //yAllele is second half of genome
+        //     yAllele += population[individual][i];
+        // }
 
-        double xSquared = Math.pow(xAllele, 2);
-        double ySquared = Math.pow(yAllele, 2);
-        double objFunc = Math.pow( (xSquared + yAllele - 11) , 2) + Math.pow( (xAllele + ySquared - 7) , 2);
+        // double xSquared = Math.pow(xAllele, 2);
+        // double ySquared = Math.pow(yAllele, 2);
+        // double objFunc = Math.pow( (xSquared + yAllele - 11) , 2) + Math.pow( (xAllele + ySquared - 7) , 2);
+
+
+        double objFunc = 0;
+        for (int i = 0; i < bitstringGenomeLen-1; i++) {
+            objFunc += 100 * Math.pow(population[individual][i+1] - Math.pow(population[individual][i], 2), 2) + Math.pow(population[individual][i] - 1, 2);
+        }
+        
+
+
         if (objFunc == 0) {
             fitnessScore = 2.0 - 0.0;
         } else if (objFunc >= 1) {
@@ -211,19 +221,26 @@ public class Population {
     */
     double childrenFitnessFunc(int individual) {
         double fitnessScore = 0.0;
-        double xAllele = 0;
-        double yAllele = 0;
+        // double xAllele = 0;
+        // double yAllele = 0;
 
-        for (int i = 0; i < (bitstringGenomeLen/2); i++) {   //xAllele is first half of genome
-            xAllele += childrenPool[individual][i];
-        }
-        for (int i = (bitstringGenomeLen/2); i < (bitstringGenomeLen); i++) { //yAllele is second half of genome
-            yAllele += childrenPool[individual][i];
+        // for (int i = 0; i < (bitstringGenomeLen/2); i++) {   //xAllele is first half of genome
+        //     xAllele += childrenPool[individual][i];
+        // }
+        // for (int i = (bitstringGenomeLen/2); i < (bitstringGenomeLen); i++) { //yAllele is second half of genome
+        //     yAllele += childrenPool[individual][i];
+        // }
+
+        // double xSquared = Math.pow(xAllele, 2);
+        // double ySquared = Math.pow(yAllele, 2);
+        // double objFunc = Math.pow( (xSquared + yAllele - 11) , 2) + Math.pow( (xAllele + ySquared - 7) , 2);
+
+        double objFunc = 0;
+        for (int i = 0; i < bitstringGenomeLen-1; i++) {
+            objFunc += 100 * Math.pow(childrenPool[individual][i+1] - Math.pow(childrenPool[individual][i], 2), 2) + Math.pow(childrenPool[individual][i] - 1, 2);
         }
 
-        double xSquared = Math.pow(xAllele, 2);
-        double ySquared = Math.pow(yAllele, 2);
-        double objFunc = Math.pow( (xSquared + yAllele - 11) , 2) + Math.pow( (xAllele + ySquared - 7) , 2);
+
         if (objFunc == 0) {
             fitnessScore = 2.0 - 0.0;
         } else if (objFunc >= 1) {
@@ -462,11 +479,11 @@ public class Population {
             printGenerationalStatistics();
             
             standardDeviation = 1.0 - averageFitnessScore;
-            terminationCondition = (averageFitnessScore < 0.99999);
+            terminationCondition = (averageFitnessScore < 0.99999) && (generationNumber <= safetyLimit);
         }
     }
 
-    void run_himmelblau() {
+    List<String> run_himmelblau() {
         initializePopulation();
         fitnessStatistics();
         printOneTimeHeader();
@@ -479,6 +496,8 @@ public class Population {
 
         printToOutputFile();
         // printPopulation();
+
+        return pythonTextString;
     }
 
     void checkTerminationString() {
@@ -490,7 +509,7 @@ public class Population {
             //default string
         }
         System.out.println(terminationString);
-        // printPopulation();
+        printPopulation();
     }
 
     void printToOutputFile() {
@@ -509,6 +528,27 @@ public class Population {
         } catch (IOException ex){
             System.out.println (ex.toString());
         }
+
+
+        // try {
+        //     Writer fileWriter = new FileWriter("himmelblau/varyingLambdaSize.txt", true); //overwrites file
+
+        //     for (int i = 0; i < pythonTextString.size(); i++) {
+        //         // fileWriter.write(pythonTextString.get(i));
+        //         // if (i != pythonTextString.size() - 1) {
+        //         //     fileWriter.write(System.lineSeparator());
+        //         // }
+        //         if (i == pythonTextString.size() - 1) {
+        //             fileWriter.write(pythonTextString.get(i));
+        //             fileWriter.write(System.lineSeparator());
+        //         }
+        //     }
+
+        //     fileWriter.close();
+
+        // } catch (IOException ex){
+        //     System.out.println (ex.toString());
+        // }
 
     }
 }

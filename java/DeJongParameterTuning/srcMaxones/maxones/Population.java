@@ -1,13 +1,15 @@
 package maxones;
 
-import java.util.Random;
-import java.util.List;
-import java.util.Arrays;
-import java.util.ArrayList;
-import java.util.Map;
 import java.lang.Math;
+
 import java.text.DecimalFormat;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 public class Population {
     DecimalFormat gen;
@@ -32,12 +34,14 @@ public class Population {
     double percentOfIdenticalGenomes;
 
     String terminationString;
+
+    List<String> pythonTextString;
     
     int[][] population;
     List<Integer> matingPool;
 
 
-    public Population() {
+    public Population(int pSize, int bslen) {
         gen = new DecimalFormat("000000");
         ftns = new DecimalFormat("0.0000");
         prcnt = new DecimalFormat("00.##");
@@ -46,8 +50,8 @@ public class Population {
 
         /* One-time header information */
         problemName = "maxones";
-        popSize = 100;
-        bitstringGenomeLen = 32;
+        popSize = pSize;
+        bitstringGenomeLen = bslen;
         mutationRate = 0.01;
         crossoverRate = 0.5;
         
@@ -59,6 +63,8 @@ public class Population {
 
         terminationString = "Default termination string.";
 
+        pythonTextString = new ArrayList<String>();
+
         population = new int[popSize][bitstringGenomeLen];
         matingPool = new ArrayList<Integer>(popSize);
     }
@@ -68,6 +74,7 @@ public class Population {
       }
     void printGenerationalStatistics() {
         System.out.println(gen.format(generationNumber) + " " + ftns.format(highestFitnessScore) + " " + ftns.format(averageFitnessScore) + " " + prcnt.format(percentOfIdenticalGenomes) + "%");
+        pythonTextString.add(gen.format(generationNumber * popSize));
     }
 
     int[][] clone2DArray(int[][] array) {
@@ -122,13 +129,28 @@ public class Population {
 
     double fitnessFunc(int individual) {
         double fitnessScore = 0;
-        for (int i = 0; i < bitstringGenomeLen; i++) {
-            if (population[individual][i] == 1) {
-                fitnessScore++;
-            }
+        // for (int i = 0; i < bitstringGenomeLen; i++) {
+        //     if (population[individual][i] == 1) {
+        //         fitnessScore++;
+        //     }
+        // }
+
+        // fitnessScore = fitnessScore / (bitstringGenomeLen);
+
+        double objFunc = 0;
+        for (int i = 0; i < bitstringGenomeLen-1; i++) {
+            objFunc += 100 * Math.pow(population[individual][i+1] - Math.pow(population[individual][i], 2), 2) + Math.pow(population[individual][i] - 1, 2);
         }
 
-        fitnessScore = fitnessScore / (bitstringGenomeLen);
+        if (objFunc == 0) {
+            fitnessScore = 2.0 - 0.0;
+        } else if (objFunc >= 1) {
+            fitnessScore = 1.0/objFunc;
+        } else { 
+            fitnessScore = (1.0-objFunc) + 1;
+        }
+
+        fitnessScore = fitnessScore/2.0;
 
         return fitnessScore;
     }
@@ -138,6 +160,7 @@ public class Population {
         lowestFitnessScore = 1.0;
         for (int i = 0; i < popSize; i++) {
             double currentIndividualsFitness = fitnessFunc(i);
+            // System.out.println(currentIndividualsFitness);
             averageFitnessScore += currentIndividualsFitness;
             if (highestFitnessScore < currentIndividualsFitness) {
                 highestFitnessScore = currentIndividualsFitness;
@@ -321,10 +344,11 @@ public class Population {
 
             generationNumber++;
             printGenerationalStatistics();
+            // printPopulation();
         }
     }
 
-    void run_maxones() {
+    List<String>  run_maxones() {
         initializePopulation();
         fitnessStatistics();
         printOneTimeHeader();
@@ -335,6 +359,8 @@ public class Population {
 
         checkTerminationString();
         printPopulation();
+
+        return pythonTextString;
     }
 
     void checkTerminationString() {
