@@ -1,16 +1,15 @@
 Programs written in Java and Python
 
-To run, use "./runHimmelblau.sh" from the "src/" directory. 
+To run, use "./runEightqueens.sh" from the "src/" directory. 
 
-I had to use "chmod u+x runHimmelblau.sh" to make it executable on my system. Not sure if that transfers once submitted or it will need to be made executable again. 
+I had to use "chmod u+x runEightqueens.sh" to make it executable on my system. Not sure if that transfers once submitted or it will need to be made executable again. 
 
-"runHimmelblau.sh" should be run from the "src" folder for the file paths to work correctly.
+"runEightqueens.sh" should be run from the "src" folder for the file paths to work correctly.
 
-The graphs are written in python using matplotlib, my python version is 3.7 and it runs fine. The "runHimmelblau.sh" file should handle calling the java and python files.
+The graphs are written in python using matplotlib, my python version is 3.7 and it runs fine. The "runEightqueens.sh" file should handle calling the java and python files.
 
 The main java program requires that it can write to a file for the python program to read and plot.
 
+Running the scripts/programs takes a while since it goes through all tested parameter values 25 times for calculations.
 
-
-
-Included in the top level directory (directory of this file) are sample output graphs for a mu of 15 and 100. To change mu size, open "Himmelblau/src/himmelblau/Population.java" and change the value of "popSize" on line 66. Then re-run "runHimmelblau.sh" from "src/" to recompile and run.
+The files output by the java program need to be moved/deleted/renamed before running again or else it will continue to append to the previous run's files.

@@ -2,4 +2,4 @@
 javac -cp . eightqueens/eightqueens_WilliamPresley.java
 java -cp . eightqueens/eightqueens_WilliamPresley
 
-#python3 eightqueens/eightqueensStats.py
+python3 eightQueensTuningStats.py
