@@ -6,10 +6,11 @@ import sys
 # warnings.simplefilter("ignore", UserWarning)  # Warning is for if xticks aren't set before xticklabels are set
 
 class Graphing:
-    def __init__(self, filePath, paramName):
+    def __init__(self, filePath, paramName, yAxisName):
         self.candidateEvaluations = []
         self.parameterVal = []
         self.paramName = paramName
+        self.yAxisName = yAxisName
 
         with open(filePath) as f:
             for line in f:  # for i, line in enumerate(f):
@@ -39,9 +40,9 @@ class Graphing:
         
     def plotStats(self):
         fig, ax = plt.subplots(nrows=1, ncols=1)
-        ax.plot(self.parameterVal, self.candidateEvaluations, label="Candidate Evaluations")
+        ax.plot(self.parameterVal, self.candidateEvaluations, label=self.yAxisName)
         ax.set_yticks(np.linspace(self.candidateEvaluations[0], self.candidateEvaluations[len(self.candidateEvaluations)-1], 11))
-        ax.set_ylabel("Candidate Evaluations")
+        ax.set_ylabel(self.yAxisName)
         ax.set_xlabel("Parameter Value")
         # ax[0].set_title("Performance Graphs")
 
@@ -67,15 +68,19 @@ class Graphing:
 
 
 def main():
-    eightQueensMR = Graphing("eightqueens/varyingMutationRate.txt", "Eight Queens - Mutation Rate")
+    eightQueensMR = Graphing("eightqueens/varyingMutationRateAES.txt", "Eight Queens - Mutation Rate AES", "Candidate Evaluations")
     # himmelblau.printGeneration().printAverageFitness().printBestFitness().printDiversity()
     eightQueensMR.plotStats()
 
-    # eightQueensCR = Graphing("eightqueens/varyingCrossoverRate.txt", "Eight Queens - Crossover Rate")
-    # # himmelblau.printGeneration().printAverageFitness().printBestFitness().printDiversity()
-    # eightQueensCR.plotStats()
+    eightQueensMR = Graphing("eightqueens/varyingMutationRateSR.txt", "Eight Queens - Mutation Rate SR", "Success Rate")
+    # himmelblau.printGeneration().printAverageFitness().printBestFitness().printDiversity()
+    eightQueensMR.plotStats()
 
-    eightQueensLS = Graphing("eightqueens/varyingLambdaSize.txt", "Eight Queens - Lambda Size")
+    eightQueensLS = Graphing("eightqueens/varyingLambdaSizeAES.txt", "Eight Queens - Lambda Size AES", "Candidate Evaluations")
+    # himmelblau.printGeneration().printAverageFitness().printBestFitness().printDiversity()
+    eightQueensLS.plotStats()
+    
+    eightQueensLS = Graphing("eightqueens/varyingLambdaSizeSR.txt", "Eight Queens - Lambda Size SR", "Success Rate")
     # himmelblau.printGeneration().printAverageFitness().printBestFitness().printDiversity()
     eightQueensLS.plotStats()
 

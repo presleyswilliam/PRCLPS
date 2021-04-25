@@ -44,6 +44,7 @@ public class Population {
     String terminationString;
 
     String testName;
+    String utility;
     List<String> pythonTextString;
     
     int[][] population;
@@ -51,7 +52,7 @@ public class Population {
     int[][] childrenPool;
 
 
-    public Population(double mRate, double cRate, int lSize, String tName) {
+    public Population(double mRate, double cRate, int lSize, String tName, String u) {
         gen = new DecimalFormat("000000");
         ftns = new DecimalFormat("0.0000");
         dvsty = new DecimalFormat("00.00");
@@ -78,6 +79,7 @@ public class Population {
         terminationString = "Default termination string. "; // Extra space on the end is for python file line 21...
 
         testName = tName;
+        utility = u;
         pythonTextString = new ArrayList<String>();
 
         population = new int[popSize][bitstringGenomeLen];
@@ -93,11 +95,22 @@ public class Population {
         System.out.println(outputString);
 
         if (testName != "lambdaSize") {
-            pythonTextString.add(gen.format(candidateEvaluations));
+            pythonTextString.add(gen.format(candidateEvaluations) + " " + dvsty.format(highestFitnessScore));
         } else {
             double percentOfMaxCandidateEvaluations = (candidateEvaluations / ((popSize + lambdaSize) * safetyLimit) ) * 100;
-            pythonTextString.add(dvsty.format(percentOfMaxCandidateEvaluations));
+            pythonTextString.add(dvsty.format(percentOfMaxCandidateEvaluations) + " " + dvsty.format(highestFitnessScore));
         }
+
+        // if (utility == "aes") {
+        //     if (testName != "lambdaSize") {
+        //         pythonTextString.add(gen.format(candidateEvaluations));
+        //     } else {
+        //         double percentOfMaxCandidateEvaluations = (candidateEvaluations / ((popSize + lambdaSize) * safetyLimit) ) * 100;
+        //         pythonTextString.add(dvsty.format(percentOfMaxCandidateEvaluations));
+        //     }
+        // } else if (utility == "sr") {
+        //     pythonTextString.add(dvsty.format(highestFitnessScore));
+        // }
     }
 
     double[][] clone2DArray(double[][] array) {
